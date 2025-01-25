@@ -1,0 +1,33 @@
+Flask==2.3.3
+Werkzeug==2.3.6
+azure-cosmos==4.3.1
+fastapi==0.104.1
+uvicorn==0.24.0
+python-dotenv==1.0.0
+google-generativeai==0.3.1
+
+# Database and image processing
+pyodbc==4.0.39
+pdf2image==1.16.3
+Pillow==10.0.0
+
+# OCR
+pytesseract==0.3.10
+
+# Data processing
+pandas==2.0.3
+numpy==1.24.3
+
+# Machine learning
+scikit-learn==1.3.0
+torch==2.0.1
+transformers==4.33.2
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+
+# Web and async
+aiohttp==3.11.11
+httpx==0.28.1
+
+# Utilities
+rich==13.9.4

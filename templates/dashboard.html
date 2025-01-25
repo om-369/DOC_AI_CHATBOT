@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+    <h1 class="text-center mb-4">Welcome, {{ username }}!</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">Upload a PDF for Processing</h3>
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+                <div class="mb-3">
+                    <label for="file" class="form-label">Select a PDF File</label>
+                    <input class="form-control" type="file" name="file" id="file" accept=".pdf" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Upload and Process</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="result" class="mt-4"></div>
+
+    <div id="processing" class="text-center d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Processing...</span>
+        </div>
+        <p class="mt-2">Processing your document. Please wait...</p>
+    </div>
+
+    <div class="d-grid mt-4">
+        <button id="extract-data-btn" class="btn btn-secondary">Extract Data</button>
+    </div>
+    </div>
+
+    <button id="display-result-btn" class="btn btn-primary">Display Result</button>
+    <div id="result-section" style="display: none;">
+        <h2>Extracted Data</h2>
+        <pre id="result-json"></pre>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            var processingDiv = document.getElementById('processing');
+            var resultDiv = document.getElementById('result');
+
+            processingDiv.classList.remove('d-none');
+            resultDiv.innerHTML = '';
+
+            fetch('{{ url_for("dashboard") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                processingDiv.classList.add('d-none');
+                if (data.message) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4 class="alert-heading">Success!</h4>
+                            <p>${data.message}</p>
+                            <hr>
+                            <p class="mb-0">PDF Path: ${data.pdf_path}</p>
+                            <p class="mb-0">OCR Path: ${data.ocr_path}</p>
+                        </div>
+                    `;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                processingDiv.classList.add('d-none');
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger">An error occurred while processing the file.</div>';
+            });
+        });
+
+        document.getElementById('extract-data-btn').addEventListener('click', function() {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            fetch('{{ url_for("extract_data") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4 class="alert-heading">Success!</h4>
+                            <p>${data.message}</p>
+                            <hr>
+                            <p class="mb-0">Result Path: ${data.result_path}</p>
+                        </div>
+                    `;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger">An error occurred while extracting the data.</div>';
+            });
+
+        });
+        document.getElementById('display-result-btn').addEventListener('click', function() {
+            var resultSection = document.getElementById('result-section');
+            var resultJson = document.getElementById('result-json');
+            var resultPath = document.querySelector('.alert-success p:last-child').textContent.split(': ')[1];
+
+            fetch(resultPath)
+            .then(response => response.json())
+            .then(jsonData => {
+                resultJson.textContent = JSON.stringify(jsonData, null, 4);
+                resultSection.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error reading JSON file:', error);
+            });
+        });
+    </script>
+    {% if not data %}
+    <p>No data available.</p>
+    {% else %}
+        {% for id, text in data.items() %}
+            <h3>{{ id }}</h3>
+            <pre>{{ text }}</pre>
+        {% endfor %}
+    {% endif %}
+
+    {% endblock %}
